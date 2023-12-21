@@ -1,9 +1,8 @@
-from typing import List
 import fastapi
-from fastapi import HTTPException
-from schemas import Todo
-from models import todos_db
-from constants import error
+from typing import List
+from .models import todos_db
+from .schemas import Todo
+from .constants import error
 
 router = fastapi.APIRouter()
 
@@ -78,7 +77,7 @@ def update_todo(todo_id: int, completed: bool):
     """
     todo = get_todo_by_id(todo_id)
     if todo is None:
-        raise HTTPException(status_code=404, detail="Todo not found")
+        raise error
     todo.completed = completed
     return todo
 
@@ -99,6 +98,6 @@ def delete_todo(todo_id: int):
     """
     todo = get_todo_by_id(todo_id)
     if todo is None:
-        raise HTTPException(status_code=404, detail="Todo not found")
+        raise error
     todos_db.remove(todo)
     return todo
