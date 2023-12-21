@@ -1,8 +1,10 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 from typing import List
+import fastapi
+from pydantic import BaseModel
+from fastapi import HTTPException
 
-app = FastAPI()
+
+router = fastapi.APIRouter()
 
 
 class Todo(BaseModel):
@@ -29,7 +31,7 @@ def get_todo_by_id(todo_id: int):
     return None
 
 
-@app.post("/todos/")
+@router.post("/todos/")
 def create_todo(todo: Todo):
     """
         Create a new to-do item.
@@ -44,7 +46,7 @@ def create_todo(todo: Todo):
     return todo
 
 
-@app.get("/todos/", response_model=List[Todo])
+@router.get("/todos/", response_model=List[Todo])
 def read_todos():
     """
         Get a list of all to-do items.
@@ -55,7 +57,7 @@ def read_todos():
     return todos_db
 
 
-@app.get("/todos/{todo_id}", response_model=Todo)
+@router.get("/todos/{todo_id}", response_model=Todo)
 def read_todo(todo_id: int):
     """
         Get information about a specific to-do item.
@@ -75,7 +77,7 @@ def read_todo(todo_id: int):
     return todo
 
 
-@app.put("/todos/{todo_id}", response_model=Todo)
+@router.put("/todos/{todo_id}", response_model=Todo)
 def update_todo(todo_id: int, completed: bool):
     """
         Update the completion status of a to-do item.
@@ -97,7 +99,7 @@ def update_todo(todo_id: int, completed: bool):
     return todo
 
 
-@app.delete("/todos/{todo_id}", response_model=Todo)
+@router.delete("/todos/{todo_id}", response_model=Todo)
 def delete_todo(todo_id: int):
     """
         Delete a to-do item.
