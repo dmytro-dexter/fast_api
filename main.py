@@ -1,32 +1,59 @@
-from fastapi import FastAPI, Path, Query
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
 
 app = FastAPI()
 
-users = []
+
+class Todo(BaseModel):
+    id: int
+    title: str
+    description: str
+    completed: bool = False
 
 
-class User(BaseModel):
-    email: str
-    is_active: bool
-    bio: Optional[str]
+todos_db = []
 
 
-@app.get("/users", response_model=List[User])
-async def get_user():
-    return users
+def get_todo_by_id(todo_id: int):
+    for element in todos_db:
+        if element.id == todo_id:
+            return element
+    return None
 
 
-@app.post("/users")
-async def create_user(user: User):
-    users.append(user)
-    return "Success"
+@app.post("/todos/")
+def create_todo(todo: Todo):
+    todos_db.append(todo)
+    return todo
 
 
-@app.get("/users/{id}")
-async def get_user(
-        id: int = Path(..., description="The ID of the user you want to retrieve", gt=2),
-        q: str = Query(None, max_length=5)
-):
-    return {"user": users[id], "query": q}
+@app.get("/todos/", response_model=List[Todo])
+def read_todos():
+    return todos_db
+
+
+@app.get("/todos/{todo_id}", response_model=Todo)
+def read_todo(todo_id: int):
+    todo = get_todo_by_id(todo_id)
+    if todo is None:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    return todo
+
+
+@app.put("/todos/{todo_id}", response_model=Todo)
+def update_todo(todo_id: int, completed: bool):
+    todo = get_todo_by_id(todo_id)
+    if todo is None:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    todo.completed = completed
+    return todo
+
+
+@app.delete("/todos/{todo_id}", response_model=Todo)
+def delete_todo(todo_id: int):
+    todo = get_todo_by_id(todo_id)
+    if todo is None:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    todos_db.remove(todo)
+    return todo
