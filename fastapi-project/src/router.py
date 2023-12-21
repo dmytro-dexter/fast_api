@@ -1,27 +1,11 @@
 from typing import List
 import fastapi
-from pydantic import BaseModel
 from fastapi import HTTPException
-
+from schemas import Todo
+from models import todos_db
+from constants import error
 
 router = fastapi.APIRouter()
-
-
-class Todo(BaseModel):
-    """
-       Attributes:
-       - id: Unique identifier for the to-do item.
-       - title: Title of the to-do item.
-       - description: Description of the item.
-       - completed: Indicates whether the to-do item is completed or not.
-    """
-    id: int
-    title: str
-    description: str
-    completed: bool = False
-
-
-todos_db = []
 
 
 def get_todo_by_id(todo_id: int):
@@ -73,7 +57,7 @@ def read_todo(todo_id: int):
     """
     todo = get_todo_by_id(todo_id)
     if todo is None:
-        raise HTTPException(status_code=404, detail="Todo not found")
+        raise error
     return todo
 
 
