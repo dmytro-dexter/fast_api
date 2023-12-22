@@ -3,15 +3,9 @@ from typing import List
 from .models import todos_db
 from .schemas import Todo
 from .constants import error
+from .service import get_todo_by_id
 
 router = fastapi.APIRouter()
-
-
-def get_todo_by_id(todo_id: int):
-    for element in todos_db:
-        if element.id == todo_id:
-            return element
-    return None
 
 
 @router.post("/todos/")
