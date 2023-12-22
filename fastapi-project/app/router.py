@@ -1,5 +1,4 @@
 import fastapi
-from typing import List
 from .models import todos_db
 from .schemas import Todo
 from .constants import error
@@ -19,11 +18,14 @@ def create_todo(todo: Todo):
         Returns:
         - Todo: The newly created to-do item.
     """
-    todos_db.append(todo)
+    todos_db[todo.id] = {"id": todo.id,
+                         "title": todo.title,
+                         "description": todo.description,
+                         "completed": todo.completed}
     return todo
 
 
-@router.get("/todos/", response_model=List[Todo])
+@router.get("/todos/", response_model=dict)
 def read_todos():
     """
         Get a list of all to-do items.
@@ -72,7 +74,7 @@ def update_todo(todo_id: int, completed: bool):
     todo = get_todo_by_id(todo_id)
     if todo is None:
         raise error
-    todo.completed = completed
+    todo["completed"] = completed
     return todo
 
 
@@ -93,5 +95,5 @@ def delete_todo(todo_id: int):
     todo = get_todo_by_id(todo_id)
     if todo is None:
         raise error
-    todos_db.remove(todo)
+    del todos_db[todo_id]
     return todo
