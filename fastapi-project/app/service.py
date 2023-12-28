@@ -1,94 +1,50 @@
-from .models import todos_db
-from .schemas import Todo
-from .constants import error
+from fastapi import HTTPException, Depends
+from sqlalchemy.orm import Session
+from .deps import get_db
+from .schemas import TodoItem, CreateTodoItem, UpdateTodoItem
+from .models import TodoItemDB
 
 
-def get_todo_by_id(todo_id: int):
-    return todos_db.get(todo_id)
+def read_todos(db: Session) -> list[TodoItem]:
+    todo_items = db.query(TodoItemDB).all()
+    return [TodoItem(**item.__dict__) for item in todo_items]
 
 
-def create_todo(todo: Todo):
-    """
-        Create a new to-do item.
-
-        Parameters:
-        - todo: The data for the new to-do item.
-
-        Returns:
-        - Todo: The newly created to-do item.
-    """
-    todos_db[todo.id] = {"id": todo.id,
-                         "title": todo.title,
-                         "description": todo.description,
-                         "completed": todo.completed}
-    return todo
+def read_todo(todo_id: int, db: Session = Depends(get_db)) -> TodoItem:
+    todo_object = db.query(TodoItemDB).filter(TodoItemDB.id == todo_id).first()
+    return TodoItem(**todo_object.__dict__) if todo_object else None
 
 
-def read_todos():
-    """
-        Get a list of all to-do items.
+def create_todo(todo: CreateTodoItem, db: Session = Depends(get_db)) -> TodoItem:
+    todo_model = TodoItemDB(
+        title=todo.title,
+        description=todo.description,
+        done=todo.done
+    )
 
-        Returns:
-        - List[Todo]: List of all to-do items.
-    """
-    return todos_db
-
-
-def read_todo(todo_id: int):
-    """
-        Get information about a specific to-do item.
-
-        Parameters:
-        - todo_id: The ID of the to-do item.
-
-        Returns:
-        - Todo: Information about the to-do item.
-
-        Raises:
-        - HTTPException 404: If the to-do item with the specified ID is not found.
-    """
-    todo = get_todo_by_id(todo_id)
-    if todo is None:
-        raise error
-    return todo
+    db.add(todo_model)
+    db.commit()
+    return todo_model
 
 
-def update_todo(todo_id: int, completed: bool):
-    """
-        Update the completion status of a to-do item.
+def update_todo(todo_id: int, body: UpdateTodoItem, db: Session = Depends(get_db)) -> TodoItem:
+    todo_object = db.query(TodoItemDB).filter(TodoItemDB.id == todo_id).first()
 
-        Parameters:
-        - todo_id: The ID of the to-do item to be updated.
-        - completed: The new completion status.
+    if todo_object is None:
+        raise HTTPException(status_code=404, detail=f"ID {todo_id}: Does not exist")
 
-        Returns:
-        - Todo: The updated to-do item.
-
-        Raises:
-        - HTTPException 404: If the to-do item with the specified ID is not found.
-    """
-    todo = get_todo_by_id(todo_id)
-    if todo is None:
-        raise error
-    todo["completed"] = completed
-    return todo
+    if todo_object:
+        for key, value in UpdateTodoItem(**body.__dict__):
+            setattr(todo_object, key, value)
+    db.commit()
+    db.refresh(todo_object)
+    return TodoItem(**todo_object.__dict__)
 
 
-def delete_todo(todo_id: int):
-    """
-        Delete a to-do item.
+def delete_todo(todo_id: int, db: Session = Depends(get_db)) -> None:
+    todo_model = db.query(TodoItemDB).filter(TodoItemDB.id == todo_id).first()
 
-        Parameters:
-        - todo_id: The ID of the to-do item to be deleted.
-
-        Returns:
-        - Todo: The deleted to-do item.
-
-        Raises:
-        - HTTPException 404: If the to-do item with the specified ID is not found.
-    """
-    todo = get_todo_by_id(todo_id)
-    if todo is None:
-        raise error
-    del todos_db[todo_id]
-    return todo
+    if todo_model is None:
+        raise HTTPException(status_code=404, detail=f"ID {todo_id} does not exist")
+    db.query(TodoItemDB).filter(TodoItemDB.id == todo_id).delete()
+    db.commit()

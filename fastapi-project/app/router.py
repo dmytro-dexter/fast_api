@@ -1,31 +1,35 @@
-import fastapi
-from .service import *
+from .service import read_todos, read_todo, create_todo, update_todo, delete_todo
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from .deps import get_db
+from .schemas import CreateTodoItem, TodoItem, UpdateTodoItem
 
-from .schemas import Todo
-
-router = fastapi.APIRouter()
-
-
-@router.post("/todos/")
-def create_todo_route(todo: Todo):
-    return create_todo(todo)
+router = APIRouter(prefix="/todos", tags=["todos"])
 
 
-@router.get("/todos/", response_model=dict)
-def read_todos_route():
-    return read_todos()
+@router.get("/")
+def read_todos_route(db: Session = Depends(get_db)) -> list[TodoItem]:
+    return read_todos(db)
 
 
-@router.get("/todos/{todo_id}", response_model=Todo)
-def read_todo_route(todo_id: int):
-    return read_todo(todo_id)
+@router.get("/{todo-id}")
+def read_todo_route(todo_id: int, db: Session = Depends(get_db)) -> TodoItem:
+    todo = read_todo(todo_id, db)
+    if not todo:
+        raise HTTPException(status_code=404, detail=f"ID {todo_id}: Does not exist")
+    return todo
 
 
-@router.put("/todos/{todo_id}", response_model=Todo)
-def update_todo_route(todo_id: int, completed: bool):
-    return update_todo(todo_id, completed)
+@router.post("/")
+def create_todo_route(todo: CreateTodoItem, db: Session = Depends(get_db)) -> TodoItem:
+    return create_todo(todo, db)
 
 
-@router.delete("/todos/{todo_id}", response_model=Todo)
-def delete_todo_route(todo_id: int):
-    return delete_todo(todo_id)
+@router.put("/{todo_id}")
+def update_todo_route(todo_id: int, body: UpdateTodoItem, db: Session = Depends(get_db)) -> TodoItem:
+    return update_todo(todo_id, body, db)
+
+
+@router.delete("/{todo_id}")
+def delete_todo_route(todo_id: int, db: Session = Depends(get_db)) -> None:
+    delete_todo(todo_id, db)
