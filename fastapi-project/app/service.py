@@ -5,14 +5,20 @@ from .schemas import TodoItem, CreateTodoItem, UpdateTodoItem
 from .models import TodoItemDB
 
 
+def find_todo_object(todo_id: int, db: Session = Depends(get_db)):
+    todo_object = db.query(TodoItemDB).filter(TodoItemDB.id == todo_id).first()
+    if todo_object is None:
+        raise HTTPException(status_code=404, detail=f"ID {todo_id}: Does not exist")
+    return todo_object
+
+
 def read_todos(db: Session) -> list[TodoItem]:
     todo_items = db.query(TodoItemDB).all()
     return [TodoItem(**item.__dict__) for item in todo_items]
 
 
 def read_todo(todo_id: int, db: Session = Depends(get_db)) -> TodoItem:
-    todo_object = db.query(TodoItemDB).filter(TodoItemDB.id == todo_id).first()
-    return TodoItem(**todo_object.__dict__) if todo_object else None
+    return TodoItem(**find_todo_object(todo_id, db).__dict__)
 
 
 def create_todo(todo: CreateTodoItem, db: Session = Depends(get_db)) -> TodoItem:
@@ -28,10 +34,7 @@ def create_todo(todo: CreateTodoItem, db: Session = Depends(get_db)) -> TodoItem
 
 
 def update_todo(todo_id: int, body: UpdateTodoItem, db: Session = Depends(get_db)) -> TodoItem:
-    todo_object = db.query(TodoItemDB).filter(TodoItemDB.id == todo_id).first()
-
-    if todo_object is None:
-        raise HTTPException(status_code=404, detail=f"ID {todo_id}: Does not exist")
+    todo_object = find_todo_object(todo_id, db)
 
     if todo_object:
         for key, value in UpdateTodoItem(**body.__dict__):
@@ -42,7 +45,7 @@ def update_todo(todo_id: int, body: UpdateTodoItem, db: Session = Depends(get_db
 
 
 def delete_todo(todo_id: int, db: Session = Depends(get_db)) -> None:
-    todo_model = db.query(TodoItemDB).filter(TodoItemDB.id == todo_id).first()
+    todo_model = find_todo_object(todo_id, db)
 
     if todo_model is None:
         raise HTTPException(status_code=404, detail=f"ID {todo_id} does not exist")

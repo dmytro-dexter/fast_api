@@ -15,8 +15,6 @@ def read_todos_route(db: Session = Depends(get_db)) -> list[TodoItem]:
 @router.get("/{todo-id}")
 def read_todo_route(todo_id: int, db: Session = Depends(get_db)) -> TodoItem:
     todo = read_todo(todo_id, db)
-    if not todo:
-        raise HTTPException(status_code=404, detail=f"ID {todo_id}: Does not exist")
     return todo
 
 
