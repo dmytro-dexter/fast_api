@@ -1,10 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CreateTodoItem(BaseModel):
-    title: str
-    description: str
-    done: bool = False
+    title: str = Field(default="Car", max_length=15)
+    description: str = Field(default="Wash", max_length=15)
+    done: bool = Field(default=False)
 
 
 class TodoItem(BaseModel):
