@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Enum, Text
+from sqlalchemy.orm import relationship
 from .database import Base
 
 
@@ -9,6 +10,3 @@ class TodoItemDB(Base):
     title = Column(String)
     description = Column(String)
     done = Column(Boolean, default=False)
-
-
-
